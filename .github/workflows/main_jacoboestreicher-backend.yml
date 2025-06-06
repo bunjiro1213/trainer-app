@@ -14,7 +14,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: read #This is required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
@@ -24,39 +24,37 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Create virtual environment and install dependencies
+      - name: Create and start virtual environment
         run: |
           cd backend
           python3 -m venv venv
           source venv/bin/activate
-          python3 -m pip install --upgrade pip
-          pip install -r requirements.txt
       
-      - name: Run Django management commands
+      - name: Install dependencies
         run: |
           cd backend 
-          source venv/bin/activate
-          python3 manage.py collectstatic --noinput --settings=myproject.settings
-          # python3 manage.py migrate --settings=myproject.settings  # Uncomment if needed
-        
-      # Optional: Add step to run tests here
-      - name: Run tests
-        run: |
-          cd backend
-          source venv/bin/activate
-          # python3 manage.py test  # Uncomment to run tests
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Create deployment package
+      - name: Collect static files
+        run: |
+          cd backend 
+          python3 manage.py collectstatic --noinput
+        
+      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+
+      - name: Zip artifact for deployment
         run: |
           cd backend
-          # Create a clean deployment package
-          zip -r ../deployment.zip . -x "venv/*" "*.pyc" "__pycache__/*" ".git/*" "*.log"
+          zip release.zip ./* -r
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: deployment.zip
+          path: |
+            backend/release.zip
+            !venv/
 
   deploy:
     runs-on: ubuntu-latest
@@ -65,8 +63,8 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write
-      contents: read
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
 
     steps:
       - name: Download artifact from build job
@@ -75,7 +73,8 @@ jobs:
           name: python-app
 
       - name: Unzip artifact for deployment
-        run: unzip deployment.zip
+        run: unzip release.zip
+
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -90,3 +89,4 @@ jobs:
         with:
           app-name: 'jacoboestreicher-backend'
           slot-name: 'Production'
+          
