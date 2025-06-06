@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 
-
 urlpatterns = [
-    path("", views.recieve_data, name="recieve_data"),
+    path("", views.home, name="home"),
+    path("submit/", views.recieve_data, name="recieve_data"),
 ]
