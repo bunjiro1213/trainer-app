@@ -131,7 +131,7 @@ USE_TZ = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # React dev server
     "http://127.0.0.1:3000",
-    # Add  frontend production URL when we deploy it
+    "https://victorious-sand-0beda181e.6.azurestaticapps.net",
 ]
 
 
